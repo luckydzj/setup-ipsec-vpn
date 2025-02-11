@@ -7,7 +7,7 @@
 # The latest version of this script is available at:
 # https://github.com/hwdsl2/setup-ipsec-vpn
 #
-# Copyright (C) 2021-2022 Lin Song <linsongui@gmail.com>
+# Copyright (C) 2021-2024 Lin Song <linsongui@gmail.com>
 #
 # This work is licensed under the Creative Commons Attribution-ShareAlike 3.0
 # Unported License: http://creativecommons.org/licenses/by-sa/3.0/
@@ -34,17 +34,19 @@ check_root() {
 }
 
 check_os() {
-  os_type=centos
   rh_file="/etc/redhat-release"
-  if grep -qs "Red Hat" "$rh_file"; then
-    os_type=rhel
-  fi
-  [ -f /etc/oracle-release ] && os_type=ol
-  if grep -qs "release 7" "$rh_file" || grep -qs "release 8" "$rh_file" \
-    || grep -qs "release 9" "$rh_file"; then
+  if [ -f "$rh_file" ]; then
+    os_type=centos
+    if grep -q "Red Hat" "$rh_file"; then
+      os_type=rhel
+    fi
+    [ -f /etc/oracle-release ] && os_type=ol
     grep -qi rocky "$rh_file" && os_type=rocky
     grep -qi alma "$rh_file" && os_type=alma
-  elif grep -qs "Amazon Linux release 2" /etc/system-release; then
+    if ! grep -q -E "release (7|8|9)" "$rh_file"; then
+      exiterr "This script only supports CentOS/RHEL 7-9."
+    fi
+  elif grep -qs "Amazon Linux release 2 " /etc/system-release; then
     os_type=amzn
   else
     os_type=$(lsb_release -si 2>/dev/null)
@@ -53,7 +55,7 @@ check_os() {
       [Uu]buntu)
         os_type=ubuntu
         ;;
-      [Dd]ebian)
+      [Dd]ebian|[Kk]ali)
         os_type=debian
         ;;
       [Rr]aspbian)
@@ -97,7 +99,7 @@ check_iface() {
     else
       check_wl=1
     fi
-    if [ "$check_wl" = "1" ]; then
+    if [ "$check_wl" = 1 ]; then
       case $def_iface in
         wl*)
           exiterr "Wireless interface '$def_iface' detected. DO NOT run this script on your PC or Mac!"
@@ -182,10 +184,17 @@ update_sysctl() {
   if grep -qs "hwdsl2 VPN script" /etc/sysctl.conf; then
     bigecho "Updating sysctl settings..."
     conf_bk "/etc/sysctl.conf"
+    count=17
+    line1=$(grep -A 18 "hwdsl2 VPN script" /etc/sysctl.conf | tail -n 1)
+    line2=$(grep -A 19 "hwdsl2 VPN script" /etc/sysctl.conf | tail -n 1)
+    if [ "$line1" = "net.core.default_qdisc = fq" ] \
+      && [ "$line2" = "net.ipv4.tcp_congestion_control = bbr" ]; then
+        count=19
+    fi
     if [ "$os_type" = "alpine" ]; then
-      sed -i '/# Added by hwdsl2 VPN script/,+17d' /etc/sysctl.conf
+      sed -i "/# Added by hwdsl2 VPN script/,+${count}d" /etc/sysctl.conf
     else
-      sed --follow-symlinks -i '/# Added by hwdsl2 VPN script/,+17d' /etc/sysctl.conf
+      sed --follow-symlinks -i "/# Added by hwdsl2 VPN script/,+${count}d" /etc/sysctl.conf
     fi
     if [ ! -f /usr/bin/wg-quick ] && [ ! -f /usr/sbin/openvpn ]; then
       echo 0 > /proc/sys/net/ipv4/ip_forward
@@ -242,8 +251,8 @@ update_iptables_rules() {
   ipf='iptables -D FORWARD'
   ipp='iptables -t nat -D POSTROUTING'
   res='RELATED,ESTABLISHED'
-  if [ "$ipt_flag" = "1" ]; then
-    if [ "$use_nft" = "0" ]; then
+  if [ "$ipt_flag" = 1 ]; then
+    if [ "$use_nft" = 0 ]; then
       bigecho "Updating IPTables rules..."
       get_vpn_subnets
       iptables-save > "$IPT_FILE.old-$SYS_DT"

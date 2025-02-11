@@ -8,7 +8,7 @@
 # The latest version of this script is available at:
 # https://github.com/hwdsl2/setup-ipsec-vpn
 #
-# Copyright (C) 2015-2022 Lin Song <linsongui@gmail.com>
+# Copyright (C) 2015-2025 Lin Song <linsongui@gmail.com>
 # Based on the work of Thomas Sarlandie (Copyright 2012)
 #
 # This work is licensed under the Creative Commons Attribution-ShareAlike 3.0
@@ -27,8 +27,6 @@
 YOUR_IPSEC_PSK=''
 YOUR_USERNAME=''
 YOUR_PASSWORD=''
-
-# VPN client setup: https://vpnsetup.net/clients
 
 # =====================================================
 
@@ -74,25 +72,30 @@ EOF
 }
 
 check_os() {
-  os_type=centos
   rh_file="/etc/redhat-release"
-  if grep -qs "Red Hat" "$rh_file"; then
-    os_type=rhel
-  fi
-  [ -f /etc/oracle-release ] && os_type=ol
-  grep -qi rocky "$rh_file" && os_type=rocky
-  grep -qi alma "$rh_file" && os_type=alma
-  if grep -qs "release 7" "$rh_file"; then
-    os_ver=7
-  elif grep -qs "release 8" "$rh_file"; then
-    os_ver=8
-    grep -qi stream "$rh_file" && os_ver=8s
-    if [ "$os_type" = "centos" ] && [ "$os_ver" = "8" ]; then
-      exiterr "CentOS Linux 8 is EOL and not supported."
+  if [ -f "$rh_file" ]; then
+    os_type=centos
+    if grep -q "Red Hat" "$rh_file"; then
+      os_type=rhel
     fi
-  elif grep -qs "release 9" "$rh_file"; then
-    os_ver=9
-    grep -qi stream "$rh_file" && os_ver=9s
+    [ -f /etc/oracle-release ] && os_type=ol
+    grep -qi rocky "$rh_file" && os_type=rocky
+    grep -qi alma "$rh_file" && os_type=alma
+    if grep -q "release 7" "$rh_file"; then
+      os_ver=7
+    elif grep -q "release 8" "$rh_file"; then
+      os_ver=8
+      grep -qi stream "$rh_file" && os_ver=8s
+    elif grep -q "release 9" "$rh_file"; then
+      os_ver=9
+      grep -qi stream "$rh_file" && os_ver=9s
+    else
+      exiterr "This script only supports CentOS/RHEL 7-9."
+    fi
+    if [ "$os_type" = "centos" ] \
+      && { [ "$os_ver" = 7 ] || [ "$os_ver" = 8 ] || [ "$os_ver" = 8s ]; }; then
+      exiterr "CentOS Linux $os_ver is EOL and not supported."
+    fi
   else
 cat 1>&2 <<'EOF'
 Error: This script only supports one of the following OS:
@@ -103,6 +106,12 @@ EOF
 }
 
 check_iface() {
+  if ! command -v route >/dev/null 2>&1 && ! command -v ip >/dev/null 2>&1; then
+    (
+      set -x
+      yum -y -q install iproute >/dev/null || yum -y -q install iproute >/dev/null
+    )
+  fi
   def_iface=$(route 2>/dev/null | grep -m 1 '^default' | grep -o '[^ ]*$')
   [ -z "$def_iface" ] && def_iface=$(ip -4 route list 0/0 2>/dev/null | grep -m 1 -Po '(?<=dev )(\S+)')
   def_state=$(cat "/sys/class/net/$def_iface/operstate" 2>/dev/null)
@@ -154,7 +163,7 @@ check_dns() {
 
 check_server_dns() {
   if [ -n "$VPN_DNS_NAME" ] && ! check_dns_name "$VPN_DNS_NAME"; then
-      exiterr "Invalid DNS name. 'VPN_DNS_NAME' must be a fully qualified domain name (FQDN)."
+    exiterr "Invalid DNS name. 'VPN_DNS_NAME' must be a fully qualified domain name (FQDN)."
   fi
 }
 
@@ -198,11 +207,22 @@ install_setup_pkgs() {
   ) || exiterr2
 }
 
+get_default_ip() {
+  def_ip=$(ip -4 route get 1 | sed 's/ uid .*//' | awk '{print $NF;exit}' 2>/dev/null)
+  if check_ip "$def_ip" \
+    && ! printf '%s' "$def_ip" | grep -Eq '^(10|127|172\.(1[6-9]|2[0-9]|3[0-1])|192\.168|169\.254)\.'; then
+    public_ip="$def_ip"
+  fi
+}
+
 detect_ip() {
-  bigecho "Trying to auto discover IP of this server..."
   public_ip=${VPN_PUBLIC_IP:-''}
+  check_ip "$public_ip" || get_default_ip
+  check_ip "$public_ip" && return 0
+  bigecho "Trying to auto discover IP of this server..."
   check_ip "$public_ip" || public_ip=$(dig @resolver1.opendns.com -t A -4 myip.opendns.com +short)
-  check_ip "$public_ip" || public_ip=$(wget -t 3 -T 15 -qO- http://ipv4.icanhazip.com)
+  check_ip "$public_ip" || public_ip=$(wget -t 2 -T 10 -qO- http://ipv4.icanhazip.com)
+  check_ip "$public_ip" || public_ip=$(wget -t 2 -T 10 -qO- http://ip1.dynupdate.no-ip.com)
   check_ip "$public_ip" || exiterr "Cannot detect this server's public IP. Define it as variable 'VPN_PUBLIC_IP' and re-run this script."
 }
 
@@ -222,9 +242,9 @@ install_vpn_pkgs_1() {
   rp2="$erp=*server-*optional*"
   rp3="$erp=*releases-optional*"
   if [ "$os_type" = "ol" ]; then
-    if [ "$os_ver" = "9" ]; then
+    if [ "$os_ver" = 9 ]; then
       rp1="$erp=ol9_developer_EPEL"
-    elif [ "$os_ver" = "8" ]; then
+    elif [ "$os_ver" = 8 ]; then
       rp1="$erp=ol8_developer_EPEL"
     else
       rp3="$erp=ol7_optional_latest"
@@ -251,7 +271,7 @@ install_vpn_pkgs_3() {
   p2=libevent-devel
   p3=fipscheck-devel
   p4=iptables-services
-  if [ "$os_ver" = "7" ]; then
+  if [ "$os_ver" = 7 ]; then
     (
       set -x
       yum "$rp2" "$rp3" -y -q install $p1 $p2 $p3 $p4 >/dev/null
@@ -261,7 +281,7 @@ install_vpn_pkgs_3() {
       set -x
       yum -y -q install $p1 $p2 >/dev/null
     ) || exiterr2
-    if [ "$os_ver" = "9" ] || [ "$os_ver" = "9s" ] \
+    if [ "$os_ver" = 9 ] || [ "$os_ver" = 9s ] \
       || systemctl is-active --quiet firewalld \
       || systemctl is-active --quiet nftables \
       || grep -qs "hwdsl2 VPN script" /etc/sysconfig/nftables.conf; then
@@ -275,46 +295,91 @@ install_vpn_pkgs_3() {
   fi
 }
 
+create_f2b_config() {
+  F2B_FILE=/etc/fail2ban/jail.local
+  if [ ! -f "$F2B_FILE" ]; then
+    bigecho "Creating basic Fail2Ban rules..."
+cat > "$F2B_FILE" <<'EOF'
+[ssh-iptables]
+enabled = true
+filter = sshd
+logpath = /var/log/secure
+EOF
+
+    if [ "$use_nft" = 1 ]; then
+cat >> "$F2B_FILE" <<'EOF'
+port = ssh
+banaction = nftables-multiport[blocktype=drop]
+EOF
+    else
+cat >> "$F2B_FILE" <<'EOF'
+action = iptables[name=SSH, port=ssh, protocol=tcp]
+EOF
+    fi
+  fi
+}
+
 install_fail2ban() {
   bigecho "Installing Fail2Ban to protect SSH..."
   (
     set -x
     yum "$rp1" -y -q install fail2ban >/dev/null
-  ) || exiterr2
+  ) && create_f2b_config
+}
+
+link_scripts() {
+  cd /opt/src || exit 1
+  /bin/mv -f ikev2setup.sh ikev2.sh
+  /bin/mv -f add_vpn_user.sh addvpnuser.sh
+  /bin/mv -f del_vpn_user.sh delvpnuser.sh
+  echo "+ ikev2.sh addvpnuser.sh delvpnuser.sh"
+  for sc in ikev2.sh addvpnuser.sh delvpnuser.sh; do
+    [ -s "$sc" ] && chmod +x "$sc" && ln -s "/opt/src/$sc" /usr/bin 2>/dev/null
+  done
 }
 
 get_helper_scripts() {
   bigecho "Downloading helper scripts..."
-  base_url1="https://github.com/hwdsl2/setup-ipsec-vpn/raw/master/extras"
-  base_url2="https://gitlab.com/hwdsl2/setup-ipsec-vpn/-/raw/master/extras"
-  ikev2_url1="$base_url1/ikev2setup.sh"
-  ikev2_url2="$base_url2/ikev2setup.sh"
-  add_url1="$base_url1/add_vpn_user.sh"
-  add_url2="$base_url2/add_vpn_user.sh"
-  del_url1="$base_url1/del_vpn_user.sh"
-  del_url2="$base_url2/del_vpn_user.sh"
+  base1="https://raw.githubusercontent.com/hwdsl2/setup-ipsec-vpn/master/extras"
+  base2="https://gitlab.com/hwdsl2/setup-ipsec-vpn/-/raw/master/extras"
+  sc1=ikev2setup.sh
+  sc2=add_vpn_user.sh
+  sc3=del_vpn_user.sh
   cd /opt/src || exit 1
-  printf '%s' "+ "
-  for sc in ikev2.sh addvpnuser.sh delvpnuser.sh; do
-    [ "$sc" = "ikev2.sh" ] && dl_url1="$ikev2_url1" && dl_url2="$ikev2_url2"
-    [ "$sc" = "addvpnuser.sh" ] && dl_url1="$add_url1" && dl_url2="$add_url2"
-    [ "$sc" = "delvpnuser.sh" ] && dl_url1="$del_url1" && dl_url2="$del_url2"
-    printf '%s' "$sc "
-    wget -t 3 -T 30 -q -O "$sc" "$dl_url1" \
-    || wget -t 3 -T 30 -q -O "$sc" "$dl_url2" || /bin/rm -f "$sc"
-    [ -s "$sc" ] && chmod +x "$sc" && ln -s "/opt/src/$sc" /usr/bin 2>/dev/null
-  done
-  echo
+  /bin/rm -f "$sc1" "$sc2" "$sc3"
+  if wget -t 3 -T 30 -q "$base1/$sc1" "$base1/$sc2" "$base1/$sc3"; then
+    link_scripts
+  else
+    /bin/rm -f "$sc1" "$sc2" "$sc3"
+    if wget -t 3 -T 30 -q "$base2/$sc1" "$base2/$sc2" "$base2/$sc3"; then
+      link_scripts
+    else
+      echo "Warning: Could not download helper scripts." >&2
+      /bin/rm -f "$sc1" "$sc2" "$sc3"
+    fi
+  fi
 }
 
 get_swan_ver() {
-  SWAN_VER=4.7
+  SWAN_VER=5.1
   base_url="https://github.com/hwdsl2/vpn-extras/releases/download/v1.0.0"
   swan_ver_url="$base_url/v1-$os_type-$os_ver-swanver"
-  swan_ver_latest=$(wget -t 3 -T 15 -qO- "$swan_ver_url" 2>/dev/null | head -n 1)
-  [ -z "$swan_ver_latest" ] && swan_ver_latest=$(curl -fsL "$swan_ver_url" 2>/dev/null | head -n 1)
+  swan_ver_latest=$(wget -t 2 -T 10 -qO- "$swan_ver_url" | head -n 1)
+  [ -z "$swan_ver_latest" ] && swan_ver_latest=$(curl -m 10 -fsL "$swan_ver_url" 2>/dev/null | head -n 1)
   if printf '%s' "$swan_ver_latest" | grep -Eq '^([3-9]|[1-9][0-9]{1,2})(\.([0-9]|[1-9][0-9]{1,2})){1,2}$'; then
     SWAN_VER="$swan_ver_latest"
+  fi
+  if [ -n "$VPN_SWAN_VER" ]; then
+    if ! printf '%s\n%s' "4.15" "$VPN_SWAN_VER" | sort -C -V \
+      || ! printf '%s\n%s' "$VPN_SWAN_VER" "$SWAN_VER" | sort -C -V; then
+cat 1>&2 <<EOF
+Error: Libreswan version '$VPN_SWAN_VER' is not supported.
+       This script can install Libreswan 4.15+ or $SWAN_VER.
+EOF
+      exit 1
+    else
+      SWAN_VER="$VPN_SWAN_VER"
+    fi
   fi
 }
 
@@ -336,7 +401,7 @@ check_libreswan() {
 }
 
 get_libreswan() {
-  if [ "$check_result" = "0" ]; then
+  if [ "$check_result" = 0 ]; then
     bigecho "Downloading Libreswan..."
     cd /opt/src || exit 1
     swan_file="libreswan-$SWAN_VER.tar.gz"
@@ -354,7 +419,7 @@ get_libreswan() {
 }
 
 install_libreswan() {
-  if [ "$check_result" = "0" ]; then
+  if [ "$check_result" = 0 ]; then
     bigecho "Compiling and installing Libreswan, please wait..."
     cd "libreswan-$SWAN_VER" || exit 1
 cat > Makefile.inc.local <<'EOF'
@@ -362,7 +427,10 @@ WERROR_CFLAGS=-w -s
 USE_DNSSEC=false
 USE_DH2=true
 USE_NSS_KDF=false
+USE_LINUX_AUDIT=false
+USE_SECCOMP=false
 FINALNSSDIR=/etc/ipsec.d
+NSSDIR=/etc/ipsec.d
 EOF
     if ! grep -qs IFLA_XFRM_LINK /usr/include/linux/if_link.h; then
       echo "USE_XFRM_INTERFACE_IFLA_HEADER=true" >> Makefile.inc.local
@@ -371,7 +439,7 @@ EOF
     [ -z "$NPROCS" ] && NPROCS=1
     (
       set -x
-      make "-j$((NPROCS+1))" -s base >/dev/null && make -s install-base >/dev/null
+      make "-j$((NPROCS+1))" -s base >/dev/null 2>&1 && make -s install-base >/dev/null 2>&1
     )
     cd /opt/src || exit 1
     /bin/rm -rf "/opt/src/libreswan-$SWAN_VER"
@@ -398,6 +466,7 @@ cat > /etc/ipsec.conf <<EOF
 version 2.0
 
 config setup
+  ikev1-policy=accept
   virtual-private=%v4:10.0.0.0/8,%v4:192.168.0.0/16,%v4:172.16.0.0/12,%v4:!$L2TP_NET,%v4:!$XAUTH_NET
   uniqueids=no
 
@@ -414,7 +483,7 @@ conn shared
   dpdtimeout=300
   dpdaction=clear
   ikev2=never
-  ike=aes256-sha2,aes128-sha2,aes256-sha1,aes128-sha1,aes256-sha2;modp1024,aes128-sha1;modp1024
+  ike=aes256-sha2;modp2048,aes128-sha2;modp2048,aes256-sha1;modp2048,aes128-sha1;modp2048
   phase2alg=aes_gcm-null,aes128-sha1,aes256-sha1,aes256-sha2_512,aes128-sha2,aes256-sha2
   ikelifetime=24h
   salifetime=24h
@@ -496,30 +565,6 @@ $VPN_USER:$VPN_PASSWORD_ENC:xauth-psk
 EOF
 }
 
-create_f2b_config() {
-  F2B_FILE=/etc/fail2ban/jail.local
-  if [ ! -f "$F2B_FILE" ]; then
-    bigecho "Creating basic Fail2Ban rules..."
-cat > "$F2B_FILE" <<'EOF'
-[ssh-iptables]
-enabled = true
-filter = sshd
-logpath = /var/log/secure
-EOF
-
-    if [ "$use_nft" = "1" ]; then
-cat >> "$F2B_FILE" <<'EOF'
-port = ssh
-banaction = nftables-multiport[blocktype=drop]
-EOF
-    else
-cat >> "$F2B_FILE" <<'EOF'
-action = iptables[name=SSH, port=ssh, protocol=tcp]
-EOF
-    fi
-  fi
-}
-
 update_sysctl() {
   bigecho "Updating sysctl settings..."
   if ! grep -qs "hwdsl2 VPN script" /etc/sysctl.conf; then
@@ -540,18 +585,26 @@ net.ipv4.conf.default.rp_filter = 0
 net.ipv4.conf.$NET_IFACE.send_redirects = 0
 net.ipv4.conf.$NET_IFACE.rp_filter = 0
 
-net.core.wmem_max = 12582912
-net.core.rmem_max = 12582912
-net.ipv4.tcp_rmem = 10240 87380 12582912
-net.ipv4.tcp_wmem = 10240 87380 12582912
+net.core.wmem_max = 16777216
+net.core.rmem_max = 16777216
+net.ipv4.tcp_rmem = 4096 87380 16777216
+net.ipv4.tcp_wmem = 4096 87380 16777216
 EOF
+    if modprobe -q tcp_bbr \
+      && printf '%s\n%s' "4.20" "$(uname -r)" | sort -C -V \
+      && [ -f /proc/sys/net/ipv4/tcp_congestion_control ]; then
+cat >> /etc/sysctl.conf <<'EOF'
+net.core.default_qdisc = fq
+net.ipv4.tcp_congestion_control = bbr
+EOF
+    fi
   fi
 }
 
 update_iptables() {
   bigecho "Updating IPTables rules..."
   IPT_FILE=/etc/sysconfig/iptables
-  [ "$use_nft" = "1" ] && IPT_FILE=/etc/sysconfig/nftables.conf
+  [ "$use_nft" = 1 ] && IPT_FILE=/etc/sysconfig/nftables.conf
   ipt_flag=0
   if ! grep -qs "hwdsl2 VPN script" "$IPT_FILE"; then
     ipt_flag=1
@@ -562,9 +615,14 @@ update_iptables() {
   res='RELATED,ESTABLISHED'
   nff='nft insert rule inet firewalld'
   nfn='nft insert rule inet nftables_svc'
-  if [ "$ipt_flag" = "1" ]; then
+  if [ "$ipt_flag" = 1 ]; then
     service fail2ban stop >/dev/null 2>&1
-    if [ "$use_nft" = "1" ]; then
+    if [ "$use_nft" = 1 ]; then
+      fd_conf=/etc/firewalld/firewalld.conf
+      if grep -qs '^NftablesTableOwner=yes' "$fd_conf"; then
+        sed -i '/NftablesTableOwner/s/yes/no/' "$fd_conf"
+        firewall-cmd --reload >/dev/null 2>&1
+      fi
       nft list ruleset > "$IPT_FILE.old-$SYS_DT"
       chmod 600 "$IPT_FILE.old-$SYS_DT"
     else
@@ -583,13 +641,17 @@ update_iptables() {
     $ipf 5 -i "$NET_IFACE" -d "$XAUTH_NET" -m conntrack --ctstate "$res" -j ACCEPT
     $ipf 6 -s "$XAUTH_NET" -o "$NET_IFACE" -j ACCEPT
     $ipf 7 -s "$XAUTH_NET" -o ppp+ -j ACCEPT
-    if [ "$use_nft" != "1" ]; then
+    if [ "$use_nft" != 1 ]; then
       iptables -A FORWARD -j DROP
     fi
-    $ipp -s "$XAUTH_NET" -o "$NET_IFACE" -m policy --dir out --pol none -j MASQUERADE
+    if [ "$use_nft" = 1 ]; then
+      $ipp -s "$XAUTH_NET" -o "$NET_IFACE" ! -d "$XAUTH_NET" -j MASQUERADE
+    else
+      $ipp -s "$XAUTH_NET" -o "$NET_IFACE" -m policy --dir out --pol none -j MASQUERADE
+    fi
     $ipp -s "$L2TP_NET" -o "$NET_IFACE" -j MASQUERADE
     echo "# Modified by hwdsl2 VPN script" > "$IPT_FILE"
-    if [ "$use_nft" = "1" ]; then
+    if [ "$use_nft" = 1 ]; then
       for vport in 500 4500 1701; do
         $nff filter_INPUT udp dport "$vport" accept 2>/dev/null
         $nfn allow udp dport "$vport" accept 2>/dev/null
@@ -604,6 +666,16 @@ update_iptables() {
       nft list ruleset >> "$IPT_FILE"
     else
       iptables-save >> "$IPT_FILE"
+    fi
+  fi
+}
+
+fix_nss_config() {
+  nss_conf="/etc/crypto-policies/back-ends/nss.config"
+  if [ -s "$nss_conf" ]; then
+    if ! grep -q ":SHA1:" "$nss_conf" \
+      && ! grep -q " allow=SHA1:" "$nss_conf"; then
+      sed -i "/ALL allow=/s/ allow=/ allow=SHA1:/" "$nss_conf"
     fi
   fi
 }
@@ -626,12 +698,12 @@ apply_gcp_mtu_fix() {
 enable_on_boot() {
   bigecho "Enabling services on boot..."
   systemctl --now mask firewalld 2>/dev/null
-  if [ "$os_type$os_ver" = "ol9" ]; then
+  if [ "$use_nft" = 1 ]; then
     systemctl enable nftables 2>/dev/null
-  elif [ "$use_nft" = "1" ]; then
-    systemctl enable nftables fail2ban 2>/dev/null
+    systemctl enable fail2ban 2>/dev/null
   else
-    systemctl enable iptables fail2ban 2>/dev/null
+    systemctl enable iptables 2>/dev/null
+    systemctl enable fail2ban 2>/dev/null
   fi
   if ! grep -qs "hwdsl2 VPN script" /etc/rc.local; then
     if [ -f /etc/rc.local ]; then
@@ -658,7 +730,10 @@ start_services() {
   restorecon /etc/ipsec.d/*db 2>/dev/null
   restorecon /usr/local/sbin -Rv 2>/dev/null
   restorecon /usr/local/libexec/ipsec -Rv 2>/dev/null
-  if [ "$use_nft" = "1" ]; then
+  if [ "$use_nft" = 1 ]; then
+    if ! nft -c -f "$IPT_FILE" >/dev/null 2>&1; then
+      sed -i '/ip6 saddr fddd:\(2c4\|1194\):/s/xt target "MASQUERADE"/masquerade/' "$IPT_FILE"
+    fi
     nft -f "$IPT_FILE"
   else
     iptables-restore < "$IPT_FILE"
@@ -700,12 +775,21 @@ EOF
 set_up_ikev2() {
   status=0
   if [ -s /opt/src/ikev2.sh ] && [ ! -f /etc/ipsec.d/ikev2.conf ]; then
-    sleep 1
-    VPN_DNS_NAME="$VPN_DNS_NAME" VPN_PUBLIC_IP="$public_ip" \
-    VPN_CLIENT_NAME="$VPN_CLIENT_NAME" VPN_XAUTH_POOL="$VPN_XAUTH_POOL" \
-    VPN_DNS_SRV1="$VPN_DNS_SRV1" VPN_DNS_SRV2="$VPN_DNS_SRV2" \
-    VPN_PROTECT_CONFIG="$VPN_PROTECT_CONFIG" \
-    /bin/bash /opt/src/ikev2.sh --auto || status=1
+    skip_ikev2=0
+    case $VPN_SKIP_IKEV2 in
+      [yY][eE][sS])
+        skip_ikev2=1
+        ;;
+    esac
+    if [ "$skip_ikev2" = 0 ]; then
+      sleep 1
+      VPN_DNS_NAME="$VPN_DNS_NAME" VPN_PUBLIC_IP="$public_ip" \
+      VPN_CLIENT_NAME="$VPN_CLIENT_NAME" VPN_XAUTH_POOL="$VPN_XAUTH_POOL" \
+      VPN_DNS_SRV1="$VPN_DNS_SRV1" VPN_DNS_SRV2="$VPN_DNS_SRV2" \
+      VPN_PROTECT_CONFIG="$VPN_PROTECT_CONFIG" \
+      VPN_CLIENT_VALIDITY="$VPN_CLIENT_VALIDITY" \
+      /bin/bash /opt/src/ikev2.sh --auto || status=1
+    fi
   elif [ -s /opt/src/ikev2.sh ]; then
 cat <<'EOF'
 ================================================
@@ -742,18 +826,14 @@ vpnsetup() {
   install_vpn_pkgs_1
   install_vpn_pkgs_2
   install_vpn_pkgs_3
-  if [ "$os_type$os_ver" != "ol9" ]; then
-    install_fail2ban
-  fi
+  install_fail2ban
   get_helper_scripts
   get_libreswan
   install_libreswan
   create_vpn_config
-  if [ "$os_type$os_ver" != "ol9" ]; then
-    create_f2b_config
-  fi
   update_sysctl
   update_iptables
+  fix_nss_config
   apply_gcp_mtu_fix
   enable_on_boot
   start_services

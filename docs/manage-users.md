@@ -2,7 +2,7 @@
 
 # Manage VPN Users
 
-By default, a single user account for VPN login is created. If you wish to view or manage users for the IPsec/L2TP and IPsec/XAuth ("Cisco IPsec") modes, read this document. For IKEv2, see [Manage client certificates](ikev2-howto.md#manage-client-certificates).
+By default, a single user account for VPN login is created. If you wish to view or manage users for the IPsec/L2TP and IPsec/XAuth ("Cisco IPsec") modes, read this document. For IKEv2, see [Manage IKEv2 clients](ikev2-howto.md#manage-ikev2-clients).
 
 * [Manage VPN users using helper scripts](#manage-vpn-users-using-helper-scripts)
 * [View VPN users](#view-vpn-users)
@@ -11,7 +11,7 @@ By default, a single user account for VPN login is created. If you wish to view 
 
 ## Manage VPN users using helper scripts
 
-You may use helper scripts to add, delete or update VPN users for both IPsec/L2TP and IPsec/XAuth ("Cisco IPsec") modes. For IKEv2 mode, see [Manage client certificates](ikev2-howto.md#manage-client-certificates).
+You may use helper scripts to add, delete or update VPN users for both IPsec/L2TP and IPsec/XAuth ("Cisco IPsec") modes. For IKEv2, see [Manage IKEv2 clients](ikev2-howto.md#manage-ikev2-clients).
 
 **Note:** Replace command arguments below with your own values. VPN users are stored in `/etc/ppp/chap-secrets` and `/etc/ipsec.d/passwd`. The scripts will backup these files before making changes, with `.old-date-time` suffix.
 
@@ -90,7 +90,7 @@ Remove **all existing VPN users** and replace with the list of users you specify
 First, download the [helper script](../extras/update_vpn_users.sh):
 
 ```bash
-wget https://get.vpnsetup.net/updateusers -O updatevpnusers.sh
+wget https://get.vpnsetup.net/updateusers -O updateusers.sh
 ```
 
 **Important:** This script will remove **all existing VPN users** and replace with the list of users you specify. Therefore, you must include any existing user(s) you want to keep in the variables below.
@@ -100,9 +100,9 @@ To use this script, choose one of the following options:
 **Option 1:** Edit the script and enter VPN user details:
 
 ```bash
-nano -w updatevpnusers.sh
+nano -w updateusers.sh
 [Replace with your own values: YOUR_USERNAMES and YOUR_PASSWORDS]
-sudo bash updatevpnusers.sh
+sudo bash updateusers.sh
 ```
 
 **Option 2:** Define VPN user details as environment variables:
@@ -114,7 +114,7 @@ sudo bash updatevpnusers.sh
 sudo \
 VPN_USERS='username1 username2 ...' \
 VPN_PASSWORDS='password1 password2 ...' \
-bash updatevpnusers.sh
+bash updateusers.sh
 ```
 
 ## View VPN users
@@ -178,7 +178,7 @@ openssl passwd -1 'password1'
 
 ## License
 
-Copyright (C) 2016-2022 [Lin Song](https://github.com/hwdsl2) [![View my profile on LinkedIn](https://static.licdn.com/scds/common/u/img/webpromo/btn_viewmy_160x25.png)](https://www.linkedin.com/in/linsongui)   
+Copyright (C) 2016-2024 [Lin Song](https://github.com/hwdsl2) [![View my profile on LinkedIn](https://static.licdn.com/scds/common/u/img/webpromo/btn_viewmy_160x25.png)](https://www.linkedin.com/in/linsongui)   
 
 [![Creative Commons License](https://i.creativecommons.org/l/by-sa/3.0/88x31.png)](http://creativecommons.org/licenses/by-sa/3.0/)   
 This work is licensed under the [Creative Commons Attribution-ShareAlike 3.0 Unported License](http://creativecommons.org/licenses/by-sa/3.0/)  

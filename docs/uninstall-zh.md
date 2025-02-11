@@ -12,18 +12,18 @@
 **警告：** 此辅助脚本将从你的服务器中删除 IPsec VPN。所有的 VPN 配置将被**永久删除**，并且 Libreswan 和 xl2tpd 将被移除。此操作**不可撤销**！
 
 ```bash
-wget https://get.vpnsetup.net/unst -O vpnunst.sh && sudo bash vpnunst.sh
+wget https://get.vpnsetup.net/unst -O unst.sh && sudo bash unst.sh
 ```
 
 <details>
 <summary>
-或者，你也可以使用以下命令。
+如果无法下载，请点这里。
 </summary>
 
 你也可以使用 `curl` 下载：
 
 ```bash
-curl -fsSL https://get.vpnsetup.net/unst -o vpnunst.sh && sudo bash vpnunst.sh
+curl -fsSL https://get.vpnsetup.net/unst -o unst.sh && sudo bash unst.sh
 ```
 
 或者，你也可以使用这些链接：
@@ -115,10 +115,26 @@ rm -f /etc/ipsec.conf* /etc/ipsec.secrets* /etc/ppp/chap-secrets* /etc/ppp/optio
 rm -rf /etc/ipsec.d /etc/xl2tpd
 ```
 
-删除 IKEv2 脚本：
+删除辅助脚本：
 
 ```bash
-rm -f /usr/bin/ikev2.sh /opt/src/ikev2.sh
+rm -f /usr/bin/ikev2.sh /opt/src/ikev2.sh \
+      /usr/bin/addvpnuser.sh /opt/src/addvpnuser.sh \
+      /usr/bin/delvpnuser.sh /opt/src/delvpnuser.sh
+```
+
+删除 fail2ban：
+
+**注：** 这是可选的。Fail2ban 可以帮助保护你的服务器上的 SSH。\*不推荐\*删除它。
+
+```bash
+service fail2ban stop
+# Ubuntu & Debian
+apt-get purge fail2ban
+# CentOS/RHEL, Rocky Linux, AlmaLinux, Oracle Linux & Amazon Linux 2
+yum remove fail2ban
+# Alpine Linux
+apk del fail2ban
 ```
 
 ### 完成后
@@ -127,7 +143,7 @@ rm -f /usr/bin/ikev2.sh /opt/src/ikev2.sh
 
 ## 授权协议
 
-版权所有 (C) 2016-2022 [Lin Song](https://github.com/hwdsl2) [![View my profile on LinkedIn](https://static.licdn.com/scds/common/u/img/webpromo/btn_viewmy_160x25.png)](https://www.linkedin.com/in/linsongui)   
+版权所有 (C) 2016-2024 [Lin Song](https://github.com/hwdsl2) [![View my profile on LinkedIn](https://static.licdn.com/scds/common/u/img/webpromo/btn_viewmy_160x25.png)](https://www.linkedin.com/in/linsongui)   
 
 [![Creative Commons License](https://i.creativecommons.org/l/by-sa/3.0/88x31.png)](http://creativecommons.org/licenses/by-sa/3.0/)   
 这个项目是以 [知识共享署名-相同方式共享3.0](http://creativecommons.org/licenses/by-sa/3.0/) 许可协议授权。   

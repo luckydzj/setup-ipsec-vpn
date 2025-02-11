@@ -12,18 +12,18 @@ To uninstall IPsec VPN, run the [helper script](../extras/vpnuninstall.sh):
 **Warning:** This helper script will remove IPsec VPN from your server. All VPN configuration will be **permanently deleted**, and Libreswan and xl2tpd will be removed. This **cannot be undone**!
 
 ```bash
-wget https://get.vpnsetup.net/unst -O vpnunst.sh && sudo bash vpnunst.sh
+wget https://get.vpnsetup.net/unst -O unst.sh && sudo bash unst.sh
 ```
 
 <details>
 <summary>
-Alternative commands.
+Click here if you are unable to download.
 </summary>
 
 You may also use `curl` to download:
 
 ```bash
-curl -fsSL https://get.vpnsetup.net/unst -o vpnunst.sh && sudo bash vpnunst.sh
+curl -fsSL https://get.vpnsetup.net/unst -o unst.sh && sudo bash unst.sh
 ```
 
 Alternative script URLs:
@@ -115,10 +115,26 @@ rm -f /etc/ipsec.conf* /etc/ipsec.secrets* /etc/ppp/chap-secrets* /etc/ppp/optio
 rm -rf /etc/ipsec.d /etc/xl2tpd
 ```
 
-Remove IKEv2 script:
+Remove helper scripts:
 
 ```bash
-rm -f /usr/bin/ikev2.sh /opt/src/ikev2.sh
+rm -f /usr/bin/ikev2.sh /opt/src/ikev2.sh \
+      /usr/bin/addvpnuser.sh /opt/src/addvpnuser.sh \
+      /usr/bin/delvpnuser.sh /opt/src/delvpnuser.sh
+```
+
+Remove fail2ban:
+
+**Note:** This is optional. Fail2ban can help protect SSH on your server. Removing it is NOT recommended.
+
+```bash
+service fail2ban stop
+# Ubuntu & Debian
+apt-get purge fail2ban
+# CentOS/RHEL, Rocky Linux, AlmaLinux, Oracle Linux & Amazon Linux 2
+yum remove fail2ban
+# Alpine Linux
+apk del fail2ban
 ```
 
 ### When finished
@@ -127,7 +143,7 @@ Reboot your server.
 
 ## License
 
-Copyright (C) 2016-2022 [Lin Song](https://github.com/hwdsl2) [![View my profile on LinkedIn](https://static.licdn.com/scds/common/u/img/webpromo/btn_viewmy_160x25.png)](https://www.linkedin.com/in/linsongui)   
+Copyright (C) 2016-2024 [Lin Song](https://github.com/hwdsl2) [![View my profile on LinkedIn](https://static.licdn.com/scds/common/u/img/webpromo/btn_viewmy_160x25.png)](https://www.linkedin.com/in/linsongui)   
 
 [![Creative Commons License](https://i.creativecommons.org/l/by-sa/3.0/88x31.png)](http://creativecommons.org/licenses/by-sa/3.0/)   
 This work is licensed under the [Creative Commons Attribution-ShareAlike 3.0 Unported License](http://creativecommons.org/licenses/by-sa/3.0/)  

@@ -2,7 +2,7 @@
 
 # 管理 VPN 用户
 
-在默认情况下，将只创建一个用于 VPN 登录的用户账户。如果你需要查看或管理 IPsec/L2TP 和 IPsec/XAuth ("Cisco IPsec") 模式的用户，请阅读本文档。对于 IKEv2，参见 [管理客户端证书](ikev2-howto-zh.md#管理客户端证书)。
+在默认情况下，将只创建一个用于 VPN 登录的用户账户。如果你需要查看或管理 IPsec/L2TP 和 IPsec/XAuth ("Cisco IPsec") 模式的用户，请阅读本文档。对于 IKEv2，参见 [管理 IKEv2 客户端](ikev2-howto-zh.md#管理-ikev2-客户端)。
 
 * [使用辅助脚本管理 VPN 用户](#使用辅助脚本管理-vpn-用户)
 * [查看 VPN 用户](#查看-vpn-用户)
@@ -11,7 +11,7 @@
 
 ## 使用辅助脚本管理 VPN 用户
 
-你可以使用辅助脚本添加，删除或者更新 VPN 用户。它们将同时更新 IPsec/L2TP 和 IPsec/XAuth ("Cisco IPsec") 模式的用户。对于 IKEv2 模式，请参见 [管理客户端证书](ikev2-howto-zh.md#管理客户端证书)。
+你可以使用辅助脚本添加，删除或者更新 VPN 用户。它们将同时更新 IPsec/L2TP 和 IPsec/XAuth ("Cisco IPsec") 模式的用户。对于 IKEv2，参见 [管理 IKEv2 客户端](ikev2-howto-zh.md#管理-ikev2-客户端)。
 
 **注：** 将下面的命令的参数换成你自己的值。VPN 用户信息保存在文件 `/etc/ppp/chap-secrets` 和 `/etc/ipsec.d/passwd`。脚本在修改这些文件之前会先做备份，使用 `.old-日期-时间` 为后缀。
 
@@ -90,7 +90,7 @@ sudo delvpnuser.sh '要删除的用户名'
 首先下载[辅助脚本](../extras/update_vpn_users.sh)：
 
 ```bash
-wget https://get.vpnsetup.net/updateusers -O updatevpnusers.sh
+wget https://get.vpnsetup.net/updateusers -O updateusers.sh
 ```
 
 **重要：** 这个脚本会将你当前 **所有的 VPN 用户** 移除并替换为你指定的列表中的用户。如果你需要保留已有的 VPN 用户，则必须将它们包含在下面的变量中。
@@ -100,9 +100,9 @@ wget https://get.vpnsetup.net/updateusers -O updatevpnusers.sh
 **选项 1:** 编辑脚本并输入 VPN 用户信息：
 
 ```bash
-nano -w updatevpnusers.sh
+nano -w updateusers.sh
 [替换为你自己的值： YOUR_USERNAMES 和 YOUR_PASSWORDS]
-sudo bash updatevpnusers.sh
+sudo bash updateusers.sh
 ```
 
 **选项 2:** 将 VPN 用户信息定义为环境变量：
@@ -114,7 +114,7 @@ sudo bash updatevpnusers.sh
 sudo \
 VPN_USERS='用户名1 用户名2 ...' \
 VPN_PASSWORDS='密码1 密码2 ...' \
-bash updatevpnusers.sh
+bash updateusers.sh
 ```
 
 ## 查看 VPN 用户
@@ -178,7 +178,7 @@ openssl passwd -1 '密码1'
 
 ## 授权协议
 
-版权所有 (C) 2016-2022 [Lin Song](https://github.com/hwdsl2) [![View my profile on LinkedIn](https://static.licdn.com/scds/common/u/img/webpromo/btn_viewmy_160x25.png)](https://www.linkedin.com/in/linsongui)   
+版权所有 (C) 2016-2024 [Lin Song](https://github.com/hwdsl2) [![View my profile on LinkedIn](https://static.licdn.com/scds/common/u/img/webpromo/btn_viewmy_160x25.png)](https://www.linkedin.com/in/linsongui)   
 
 [![Creative Commons License](https://i.creativecommons.org/l/by-sa/3.0/88x31.png)](http://creativecommons.org/licenses/by-sa/3.0/)   
 这个项目是以 [知识共享署名-相同方式共享3.0](http://creativecommons.org/licenses/by-sa/3.0/) 许可协议授权。   

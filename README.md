@@ -10,9 +10,11 @@ An IPsec VPN encrypts your network traffic, so that nobody between you and the V
 
 We will use [Libreswan](https://libreswan.org/) as the IPsec server, and [xl2tpd](https://github.com/xelerance/xl2tpd) as the L2TP provider.
 
+**[&raquo; :book: Book: Build Your Own VPN Server](https://books2read.com/vpnguide?store=amazon)** [[English](https://books2read.com/vpnguide?store=amazon) | [中文](https://books2read.com/vpnguidezh) | [Español](https://books2read.com/vpnguidees?store=amazon) | [Deutsch](https://books2read.com/vpnguidede?store=amazon) | [Français](https://books2read.com/vpnguidefr?store=amazon) | [Italiano](https://books2read.com/vpnguideit?store=amazon) | [NL](https://books2read.com/vpnguidenl?store=amazon) | [PT](https://books2read.com/vpnguidept?store=amazon) | [日本語](https://books2read.com/vpnguideja?store=amazon)]
+
 ## Quick start
 
-First, prepare your Linux server\* with a fresh install of Ubuntu, Debian or CentOS.
+First, prepare your Linux server\* with an install of Ubuntu, Debian or CentOS.
 
 Use this one-liner to set up an IPsec VPN server:
 
@@ -26,7 +28,16 @@ Your VPN login details will be randomly generated, and displayed when finished.
 
 <details>
 <summary>
-Alternative one-liner.
+See the script in action (terminal recording).
+</summary>
+
+**Note:** This recording is for demo purposes only. VPN credentials in this recording are **NOT** valid.
+
+<p align="center"><img src="docs/images/script-demo.svg"></p>
+</details>
+<details>
+<summary>
+Click here if you are unable to download.
 </summary>
 
 You may also use `curl` to download:
@@ -44,15 +55,6 @@ https://gitlab.com/hwdsl2/setup-ipsec-vpn/-/raw/master/vpnsetup.sh
 
 If you are unable to download, open [vpnsetup.sh](vpnsetup.sh), then click the `Raw` button on the right. Press `Ctrl/Cmd+A` to select all, `Ctrl/Cmd+C` to copy, then paste into your favorite editor.
 </details>
-<details>
-<summary>
-See the VPN script in action (terminal recording).
-</summary>
-
-**Note:** This recording is for demo purposes only. VPN credentials in this recording are **NOT** valid.
-
-<p align="center"><img src="docs/images/script-demo.svg"></p>
-</details>
 
 A pre-built [Docker image](https://github.com/hwdsl2/docker-ipsec-vpn-server) is also available. For other options and client setup, read the sections below.
 
@@ -63,29 +65,42 @@ A pre-built [Docker image](https://github.com/hwdsl2/docker-ipsec-vpn-server) is
 - Fully automated IPsec VPN server setup, no user input needed
 - Supports IKEv2 with strong and fast ciphers (e.g. AES-GCM)
 - Generates VPN profiles to auto-configure iOS, macOS and Android devices
-- Supports Windows, macOS, iOS, Android and Linux as VPN clients
+- Supports Windows, macOS, iOS, Android, Chrome OS and Linux as VPN clients
 - Includes helper scripts to manage VPN users and certificates
 
 ## Requirements
 
-A cloud server, virtual private server (VPS) or dedicated server, freshly installed with:
+A cloud server, virtual private server (VPS) or dedicated server, with an install of:
 
-- Ubuntu 22.04, 20.04 or 18.04
-- Debian 11 or 10
-- CentOS 7 or CentOS Stream 9/8
-- Rocky Linux or AlmaLinux 9/8
-- Oracle Linux 9, 8 or 7
-- Red Hat Enterprise Linux (RHEL) 9, 8 or 7
+- Ubuntu 24.04, 22.04 or 20.04
+- Debian 12 or 11
+- CentOS Stream 9
+- Rocky Linux or AlmaLinux
+- Oracle Linux
 - Amazon Linux 2
-- Alpine Linux 3.16 or 3.15
+
+<details>
+<summary>
+Other supported Linux distributions.
+</summary>
+
+- Raspberry Pi OS (Raspbian)
+- Kali Linux
+- Alpine Linux
+- Red Hat Enterprise Linux (RHEL)
+</details>
 
 This also includes Linux VMs in public clouds, such as [DigitalOcean](https://blog.ls20.com/digitalocean), [Vultr](https://blog.ls20.com/vultr), [Linode](https://blog.ls20.com/linode), [OVH](https://www.ovhcloud.com/en/vps/) and [Microsoft Azure](https://azure.microsoft.com). Public cloud users can also deploy using [user data](https://blog.ls20.com/ipsec-l2tp-vpn-auto-setup-for-ubuntu-12-04-on-amazon-ec2/#vpnsetup).
 
-[![Deploy to DigitalOcean](docs/images/do-install-button.png)](http://dovpn.carlfriess.com) &nbsp;[![Deploy to Linode](docs/images/linode-deploy-button.png)](https://cloud.linode.com/stackscripts/37239) &nbsp;[![Deploy to Azure](docs/images/azure-deploy-button.png)](azure/README.md)
+Quick deploy to:
+
+[![Deploy to DigitalOcean](docs/images/do-install-button.png)](http://dovpn.carlfriess.com) &nbsp;[![Deploy to Linode](docs/images/linode-deploy-button.png)](https://cloud.linode.com/stackscripts/37239) &nbsp;[![Deploy to AWS](docs/images/aws-deploy-button.png)](aws/README.md) &nbsp;[![Deploy to Azure](docs/images/azure-deploy-button.png)](azure/README.md)
 
 [**&raquo; I want to run my own VPN but don't have a server for that**](https://blog.ls20.com/ipsec-l2tp-vpn-auto-setup-for-ubuntu-12-04-on-amazon-ec2/#gettingavps)
 
-A pre-built [Docker image](https://github.com/hwdsl2/docker-ipsec-vpn-server) is also available. Advanced users can install on a [Raspberry Pi](https://www.raspberrypi.org). [[1]](https://elasticbyte.net/posts/setting-up-a-native-cisco-ipsec-vpn-server-using-a-raspberry-pi/) [[2]](https://www.stewright.me/2018/07/create-a-raspberry-pi-vpn-server-using-l2tpipsec/)
+For servers with an external firewall (e.g. [EC2](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html)/[GCE](https://cloud.google.com/vpc/docs/firewalls)), open UDP ports 500 and 4500 for the VPN.
+
+A pre-built [Docker image](https://github.com/hwdsl2/docker-ipsec-vpn-server) is also available. Advanced users can install on a [Raspberry Pi](https://www.raspberrypi.com). [[1]](https://elasticbyte.net/posts/setting-up-a-native-cisco-ipsec-vpn-server-using-a-raspberry-pi/) [[2]](https://www.stewright.me/2018/07/create-a-raspberry-pi-vpn-server-using-l2tpipsec/)
 
 :warning: **DO NOT** run these scripts on your PC or Mac! They should only be used on a server!
 
@@ -124,11 +139,102 @@ VPN_PASSWORD='your_vpn_password' \
 sh vpn.sh
 ```
 
-After setup, you may optionally install [WireGuard](https://github.com/hwdsl2/wireguard-install) and/or [OpenVPN](https://github.com/hwdsl2/openvpn-install) on the same server.
+You may optionally install [WireGuard](https://github.com/hwdsl2/wireguard-install) and/or [OpenVPN](https://github.com/hwdsl2/openvpn-install) on the same server. If your server runs CentOS Stream, Rocky Linux or AlmaLinux, first install OpenVPN/WireGuard, then install the IPsec VPN.
 
 <details>
 <summary>
-Optional: Customize IKEv2 options during VPN setup.
+Click here if you are unable to download.
+</summary>
+
+You may also use `curl` to download. For example:
+
+```bash
+curl -fL https://get.vpnsetup.net -o vpn.sh
+sudo sh vpn.sh
+```
+
+Alternative setup URLs:
+
+```bash
+https://github.com/hwdsl2/setup-ipsec-vpn/raw/master/vpnsetup.sh
+https://gitlab.com/hwdsl2/setup-ipsec-vpn/-/raw/master/vpnsetup.sh
+```
+
+If you are unable to download, open [vpnsetup.sh](vpnsetup.sh), then click the `Raw` button on the right. Press `Ctrl/Cmd+A` to select all, `Ctrl/Cmd+C` to copy, then paste into your favorite editor.
+</details>
+<details>
+<summary>
+I want to install the older Libreswan version 4.
+</summary>
+
+It is generally recommended to use the latest [Libreswan](https://libreswan.org/) version 5, which is the default version in this project. However, if you want to install the older Libreswan version 4:
+
+```bash
+wget https://get.vpnsetup.net -O vpn.sh
+sudo VPN_SWAN_VER=4.15 sh vpn.sh
+```
+
+**Note:** If Libreswan version 5 is already installed, you may need to first [Uninstall the VPN](docs/uninstall.md) before installing Libreswan version 4. Alternatively, download the [update script](#upgrade-libreswan), edit it to specify `SWAN_VER=4.15`, then run the script.
+</details>
+
+## Customize VPN options
+
+### Use alternative DNS servers
+
+By default, clients are set to use [Google Public DNS](https://developers.google.com/speed/public-dns/) when the VPN is active. When installing the VPN, you may optionally specify custom DNS server(s) for all VPN modes. Example:
+
+```bash
+sudo VPN_DNS_SRV1=1.1.1.1 VPN_DNS_SRV2=1.0.0.1 sh vpn.sh
+```
+
+Use `VPN_DNS_SRV1` to specify the primary DNS server, and `VPN_DNS_SRV2` to specify the secondary DNS server (optional).
+
+Below is a list of some popular public DNS providers for your reference.
+
+| Provider | Primary DNS | Secondary DNS | Notes |
+| -------- | ----------- | ------------- | ----- |
+| [Google Public DNS](https://developers.google.com/speed/public-dns) | 8.8.8.8 | 8.8.4.4 | Default in this project |
+| [Cloudflare](https://1.1.1.1/dns/) | 1.1.1.1 | 1.0.0.1 | See also: [Cloudflare for families](https://1.1.1.1/family/) |
+| [Quad9](https://www.quad9.net) | 9.9.9.9 | 149.112.112.112 | Blocks malicious domains |
+| [OpenDNS](https://www.opendns.com/home-internet-security/) | 208.67.222.222 | 208.67.220.220 | Blocks phishing domains, configurable. |
+| [CleanBrowsing](https://cleanbrowsing.org/filters/) | 185.228.168.9 | 185.228.169.9 | [Domain filters](https://cleanbrowsing.org/filters/) available |
+| [NextDNS](https://nextdns.io/?from=bg25bwmp) | Varies | Varies | Ad blocking, free tier available. [Learn more](https://nextdns.io/?from=bg25bwmp). |
+| [Control D](https://controld.com/free-dns) | Varies | Varies | Ad blocking, configurable. [Learn more](https://controld.com/free-dns). |
+
+If you need to change DNS servers after VPN setup, see [Advanced usage](docs/advanced-usage.md).
+
+**Note:** If IKEv2 is already set up on the server, the variables above have no effect for IKEv2 mode. In that case, to customize IKEv2 options such as DNS servers, you can first [remove IKEv2](docs/ikev2-howto.md#remove-ikev2), then set it up again using `sudo ikev2.sh`.
+
+### Customize IKEv2 options
+
+When installing the VPN, advanced users can optionally customize IKEv2 options.
+
+<details open>
+<summary>
+Option 1: Skip IKEv2 during VPN setup, then set up IKEv2 using custom options.
+</summary>
+
+When installing the VPN, you can skip IKEv2 and only install the IPsec/L2TP and IPsec/XAuth ("Cisco IPsec") modes:
+
+```bash
+sudo VPN_SKIP_IKEV2=yes sh vpn.sh
+```
+
+(Optional) If you want to specify custom DNS server(s) for VPN clients, define `VPN_DNS_SRV1` and optionally `VPN_DNS_SRV2`. See [Use alternative DNS servers](#use-alternative-dns-servers) for details.
+
+After that, run the IKEv2 helper script to set up IKEv2 interactively using custom options:
+
+```bash
+sudo ikev2.sh
+```
+
+You can customize the following options: VPN server's DNS name, name and validity period of the first client, DNS server for VPN clients and whether to password protect client config files.
+
+**Note:** The `VPN_SKIP_IKEV2` variable has no effect if IKEv2 is already set up on the server. In that case, to customize IKEv2 options, you can first [remove IKEv2](docs/ikev2-howto.md#remove-ikev2), then set it up again using `sudo ikev2.sh`.
+</details>
+<details>
+<summary>
+Option 2: Customize IKEv2 options using environment variables.
 </summary>
 
 When installing the VPN, you can optionally specify a DNS name for the IKEv2 server address. The DNS name must be a fully qualified domain name (FQDN). Example:
@@ -157,24 +263,41 @@ sudo VPN_PROTECT_CONFIG=yes sh vpn.sh
 </details>
 <details>
 <summary>
-Click here if you are unable to download.
+For reference: List of IKEv1 and IKEv2 parameters.
 </summary>
 
-You may also use `curl` to download. For example:
+| IKEv1 parameter\*           | Default value         | Customize (env variable)\*\*             |
+| --------------------------- | --------------------- | ---------------------------------------- |
+| Server address (DNS name)   | -                     | No, but you can connect using a DNS name |
+| Server address (public IP)  | Auto detect           | VPN_PUBLIC_IP                            |
+| IPsec pre-shared key        | Auto generate         | VPN_IPSEC_PSK                            |
+| VPN username                | vpnuser               | VPN_USER                                 |
+| VPN password                | Auto generate         | VPN_PASSWORD                             |
+| DNS servers for clients     | Google Public DNS     | VPN_DNS_SRV1, VPN_DNS_SRV2               |
+| Skip IKEv2 setup            | no                    | VPN_SKIP_IKEV2=yes                       |
 
-```bash
-curl -fL https://get.vpnsetup.net -o vpn.sh
-sudo sh vpn.sh
-```
+\* These IKEv1 parameters are for IPsec/L2TP and IPsec/XAuth ("Cisco IPsec") modes.   
+\*\* Define these as environment variables when running vpn(setup).sh.
 
-Alternative setup URLs:
+| IKEv2 parameter\*           | Default value         | Customize (env variable)\*\* | Customize (interactive)\*\*\* |
+| --------------------------- | --------------------- | ---------------------------- | ----------------------------- |
+| Server address (DNS name)   | -                     | VPN_DNS_NAME                 | ✅                            |
+| Server address (public IP)  | Auto detect           | VPN_PUBLIC_IP                | ✅                            |
+| Name of first client        | vpnclient             | VPN_CLIENT_NAME              | ✅                            |
+| DNS servers for clients     | Google Public DNS     | VPN_DNS_SRV1, VPN_DNS_SRV2   | ✅                            |
+| Protect client config files | no                    | VPN_PROTECT_CONFIG=yes       | ✅                            |
+| Enable/Disable MOBIKE       | Enable if supported   | ❌                           | ✅                            |
+| Client cert validity        | 10 years (120 months) | VPN_CLIENT_VALIDITY\*\*\*\*  | ✅                            |
+| CA & server cert validity   | 10 years (120 months) | ❌                           | ❌                            |
+| CA certificate name         | IKEv2 VPN CA          | ❌                           | ❌                            |
+| Certificate key size        | 3072 bits             | ❌                           | ❌                            |
 
-```bash
-https://github.com/hwdsl2/setup-ipsec-vpn/raw/master/vpnsetup.sh
-https://gitlab.com/hwdsl2/setup-ipsec-vpn/-/raw/master/vpnsetup.sh
-```
+\* These IKEv2 parameters are for IKEv2 mode.   
+\*\* Define these as environment variables when running vpn(setup).sh, or when setting up IKEv2 in auto mode (`sudo ikev2.sh --auto`).   
+\*\*\* Can be customized during interactive IKEv2 setup (`sudo ikev2.sh`). Refer to option 1 above.   
+\*\*\*\* Use `VPN_CLIENT_VALIDITY` to specify the client cert validity period in months. Must be an integer between 1 and 120.
 
-If you are unable to download, open [vpnsetup.sh](vpnsetup.sh), then click the `Raw` button on the right. Press `Ctrl/Cmd+A` to select all, `Ctrl/Cmd+C` to copy, then paste into your favorite editor.
+In addition to these parameters, advanced users can also [customize VPN subnets](docs/advanced-usage.md#customize-vpn-subnets) during VPN setup.
 </details>
 
 ## Next steps
@@ -189,13 +312,9 @@ Get your computer or device to use the VPN. Please refer to:
 
 **[Configure IPsec/XAuth ("Cisco IPsec") VPN Clients](docs/clients-xauth.md)**
 
-**[Download PDF versions of VPN docs (supporters)](https://ko-fi.com/post/PDF-versions-of-Setup-IPsec-VPN-docs-for-easy-shar-E1E4DO69I)**
+**Read [:book: VPN book](https://ko-fi.com/post/Support-this-project-and-get-access-to-supporter-o-O5O7FVF8J) to access [extra content](https://ko-fi.com/post/Support-this-project-and-get-access-to-supporter-o-O5O7FVF8J).**
 
 Enjoy your very own VPN! :sparkles::tada::rocket::sparkles:
-
-> Like this project? You can show your support or appreciation.
->
-> <a href="https://ko-fi.com/hwdsl2" target="_blank"><img height="36" width="187" src="docs/images/kofi2.png" border="0" alt="Buy Me a Coffee at ko-fi.com" /></a> &nbsp;<a href="https://coindrop.to/hwdsl2" target="_blank"><img src="docs/images/embed-button.png" height="36" width="145" border="0" alt="Coindrop.to me" /></a>
 
 ## Important notes
 
@@ -213,7 +332,7 @@ The scripts will backup existing config files before making changes, with `.old-
 
 ## Upgrade Libreswan
 
-Use this one-liner to update [Libreswan](https://libreswan.org) ([changelog](https://github.com/libreswan/libreswan/blob/main/CHANGES) | [announce](https://lists.libreswan.org/mailman/listinfo/swan-announce)) on your VPN server.
+Use this one-liner to update [Libreswan](https://libreswan.org) ([changelog](https://github.com/libreswan/libreswan/blob/main/CHANGES) | [announce](https://lists.libreswan.org)) on your VPN server.
 
 ```bash
 wget https://get.vpnsetup.net/upg -O vpnup.sh && sudo sh vpnup.sh
@@ -221,7 +340,7 @@ wget https://get.vpnsetup.net/upg -O vpnup.sh && sudo sh vpnup.sh
 
 <details>
 <summary>
-Alternative one-liner.
+Click here if you are unable to download.
 </summary>
 
 You may also use `curl` to download:
@@ -240,7 +359,7 @@ https://gitlab.com/hwdsl2/setup-ipsec-vpn/-/raw/master/extras/vpnupgrade.sh
 If you are unable to download, open [vpnupgrade.sh](extras/vpnupgrade.sh), then click the `Raw` button on the right. Press `Ctrl/Cmd+A` to select all, `Ctrl/Cmd+C` to copy, then paste into your favorite editor.
 </details>
 
-The latest supported Libreswan version is `4.7`. Check installed version: `ipsec --version`.
+The latest supported Libreswan version is `5.1`. Check installed version: `ipsec --version`.
 
 **Note:** `xl2tpd` can be updated using your system's package manager, such as `apt-get` on Ubuntu/Debian.
 
@@ -261,10 +380,12 @@ See [Advanced usage](docs/advanced-usage.md).
 - [DNS name and server IP changes](docs/advanced-usage.md#dns-name-and-server-ip-changes)
 - [IKEv2-only VPN](docs/advanced-usage.md#ikev2-only-vpn)
 - [Internal VPN IPs and traffic](docs/advanced-usage.md#internal-vpn-ips-and-traffic)
+- [Specify VPN server's public IP](docs/advanced-usage.md#specify-vpn-servers-public-ip)
 - [Customize VPN subnets](docs/advanced-usage.md#customize-vpn-subnets)
 - [Port forwarding to VPN clients](docs/advanced-usage.md#port-forwarding-to-vpn-clients)
 - [Split tunneling](docs/advanced-usage.md#split-tunneling)
 - [Access VPN server's subnet](docs/advanced-usage.md#access-vpn-servers-subnet)
+- [Access VPN clients from server's subnet](docs/advanced-usage.md#access-vpn-clients-from-servers-subnet)
 - [Modify IPTables rules](docs/advanced-usage.md#modify-iptables-rules)
 - [Deploy Google BBR congestion control](docs/advanced-usage.md#deploy-google-bbr-congestion-control)
 
@@ -275,18 +396,18 @@ To uninstall IPsec VPN, run the [helper script](extras/vpnuninstall.sh):
 **Warning:** This helper script will remove IPsec VPN from your server. All VPN configuration will be **permanently deleted**, and Libreswan and xl2tpd will be removed. This **cannot be undone**!
 
 ```bash
-wget https://get.vpnsetup.net/unst -O vpnunst.sh && sudo bash vpnunst.sh
+wget https://get.vpnsetup.net/unst -O unst.sh && sudo bash unst.sh
 ```
 
 <details>
 <summary>
-Alternative commands.
+Click here if you are unable to download.
 </summary>
 
 You may also use `curl` to download:
 
 ```bash
-curl -fsSL https://get.vpnsetup.net/unst -o vpnunst.sh && sudo bash vpnunst.sh
+curl -fsSL https://get.vpnsetup.net/unst -o unst.sh && sudo bash unst.sh
 ```
 
 Alternative script URLs:
@@ -308,7 +429,7 @@ For more information, see [Uninstall the VPN](docs/uninstall.md).
 
 ## License
 
-Copyright (C) 2014-2022 [Lin Song](https://github.com/hwdsl2) [![View my profile on LinkedIn](https://static.licdn.com/scds/common/u/img/webpromo/btn_viewmy_160x25.png)](https://www.linkedin.com/in/linsongui)   
+Copyright (C) 2014-2024 [Lin Song](https://github.com/hwdsl2) [![View my profile on LinkedIn](https://static.licdn.com/scds/common/u/img/webpromo/btn_viewmy_160x25.png)](https://www.linkedin.com/in/linsongui)   
 Based on [the work of Thomas Sarlandie](https://github.com/sarfata/voodooprivacy) (Copyright 2012)
 
 [![Creative Commons License](https://i.creativecommons.org/l/by-sa/3.0/88x31.png)](http://creativecommons.org/licenses/by-sa/3.0/)   
